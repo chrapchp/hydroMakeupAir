@@ -28,7 +28,7 @@
 
 
 // specific write holding registers to unit
-#define B1R1_1A_SY_001_MB CUSTOM_HR_START_WRITE
+#define B1R1_1A_SY_001_MB CUSTOM_HR_START_WRITE - 1
 
 
 

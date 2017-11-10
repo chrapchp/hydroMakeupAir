@@ -42,7 +42,7 @@
 #define POLL_CYCLE_SECONDS 2 // sonar and 1-wire refresh rate
 
 
-
+#define SPEED_CALC_RATE 1 // every second
 
 
 
@@ -68,6 +68,12 @@ DA_AnalogInput B1R1_1A_PDT_005 = DA_AnalogInput(A3, 0.0, 1023.); // min max
 unsigned short B1R1_1A_SY_001 = 0; // current duty cycle to write to fan
 
 
+#define FAN_SPEED_INTERUPT 2 
+#define ENABLE_SPEED_SENSOR_INTERRUPTS attachInterrupt(digitalPinToInterrupt(FAN_SPEED_INTERUPT), onB1R1_1A_ST_001_PulseIn, RISING)
+#define DISABLE_SPEED_SENSOR_INTERRUPTS detachInterrupt(digitalPinToInterrupt(FAN_SPEED_INTERUPT))
+
+volatile unsigned int B1R1_1A_ST_001_Raw = 0;
+volatile unsigned int B1R1_1A_ST_001 = 0; // sent to host
 
 
 
@@ -77,7 +83,7 @@ unsigned int heartBeat = 0;
 
 // poll I/O every 2 seconds
 DA_NonBlockingDelay pollTimer = DA_NonBlockingDelay( POLL_CYCLE_SECONDS*1000, &doOnPoll);
-
+DA_NonBlockingDelay speedSampleTimer = DA_NonBlockingDelay( SPEED_CALC_RATE*1000, &doOnSpeedCalc);
 
 
 #ifdef PROCESS_TERMINAL
@@ -85,6 +91,10 @@ HardwareSerial *tracePort = &Serial;
 #endif
 
 
+void onB1R1_1A_ST_001_PulseIn()
+{
+  B1R1_1A_ST_001_Raw++;
+}
 
 
 void setup()
@@ -104,7 +114,7 @@ void setup()
 
   // humidity sensors start
   B1R1_1A_AT_003_DHT.begin();
-
+ENABLE_SPEED_SENSOR_INTERRUPTS;
 
 }
 
@@ -116,8 +126,8 @@ void loop()
   slave.poll(modbusRegisters, MODBUS_REG_COUNT);
   processModbusCommands();
 #endif
-  pollTimer.refresh();
-
+  pollTimer.refresh();  
+  speedSampleTimer.refresh();
 
 
   analogWrite(B1R1_1A_SY_001_PIN, B1R1_1A_SY_001);
@@ -138,7 +148,17 @@ void doOnPoll()
   heartBeat++;
 }
 
+void doOnSpeedCalc()
+{
 
+
+  DISABLE_SPEED_SENSOR_INTERRUPTS;
+  B1R1_1A_ST_001 = B1R1_1A_ST_001_Raw;
+  B1R1_1A_ST_001_Raw = 0;
+  ENABLE_SPEED_SENSOR_INTERRUPTS;
+
+  // resetTotalizers();
+}
 
 void doReadAnalogs()
 {
@@ -172,7 +192,7 @@ void refreshModbusRegisters()
 
 
   //modbusRegisters[HR_FLOW1] = B1R1_1A_FT_001.getCurrentPulses();
-  modbusRegisters[B1R1_1A_ST_001_MB] =  -1; // not implemented
+  modbusRegisters[B1R1_1A_ST_001_MB] =  B1R1_1A_ST_001 ;
     modbusRegisters[HEART_BEAT] = heartBeat;
 
 
