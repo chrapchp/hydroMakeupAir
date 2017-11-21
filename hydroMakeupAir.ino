@@ -60,7 +60,7 @@ float B1R1_1A_TT_010 = NAN; // or B1R1-1A-TT-014 for right
 
 
 DA_AnalogInput B1R1_1A_PDT_004 = DA_AnalogInput(A3, 0.0, 1023.); // min max
-DA_AnalogInput B1R1_1A_PDT_005 = DA_AnalogInput(A3, 0.0, 1023.); // min max
+DA_AnalogInput B1R1_1A_PDT_005 = DA_AnalogInput(A6, 0.0, 1023.); // min max
 
 
 // PWM control
